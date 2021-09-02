@@ -22,21 +22,26 @@ class _MyAppState extends State<FullScreenImagePage> {
   var progressString = "";
   // Get battery level.
   String _setWallpaper = '';
+  double _promptOpacity = 0.0;
+  String compressed =
+      "https://raw.githubusercontent.com/Wallux-0/Wallpapers/main/compressed/";
+  String uncompressed =
+      "https://raw.githubusercontent.com/Wallux-0/Wallpapers/main/";
 
-  Future<Null> setWallpaper() async {
+  Future<Null> setWallpaper(int n) async {
     Dio dio = Dio();
     try {
       var dir = await getTemporaryDirectory();
       print(dir);
       print(widget.name);
-      await dio.download(widget.img, dir.path + "/" + widget.name,
+      await dio.download(uncompressed + widget.img, dir.path + "/myimg.jpg",
           onReceiveProgress: (rec, total) {
         setState(() {
           downloading = true;
           progressString = ((rec / total) * 100).toStringAsFixed(0) + "%";
           print(progressString);
           if (progressString == "100%") {
-            _setWallpaer();
+            _setWallpaer(n);
           }
         });
       });
@@ -49,13 +54,13 @@ class _MyAppState extends State<FullScreenImagePage> {
     print("completed");
   }
 
-  Future<Null> _setWallpaer() async {
+  Future<Null> _setWallpaer(int n) async {
     String setWallpaper;
     try {
       var dir = await getTemporaryDirectory();
 
       final int result = await platform
-          .invokeMethod('setWallpaper', [dir.path + '/myimag.jpg', 1]);
+          .invokeMethod('setWallpaper', [dir.path + '/myimg.jpg', n]);
       setWallpaper = 'Wallpaper Changed';
     } on PlatformException catch (e) {
       setWallpaper = "Something went wrong";
@@ -64,61 +69,13 @@ class _MyAppState extends State<FullScreenImagePage> {
 
     setState(() {
       _setWallpaper = setWallpaper;
+      _promptOpacity = 1.0;
     });
 
     Future.delayed(Duration(seconds: 3), () {
       setState(() {
         _setWallpaper = " ";
-      });
-    });
-  }
-
-  Future<Null> setLockscreen() async {
-    Dio dio = Dio();
-    try {
-      var dir = await getTemporaryDirectory();
-      print(dir);
-
-      await dio.download(widget.img, dir.path + "/myimag.jpg",
-          onReceiveProgress: (rec, total) {
-        setState(() {
-          downloading = true;
-          progressString = ((rec / total) * 100).toStringAsFixed(0) + "%";
-          print(progressString);
-          if (progressString == "100%") {
-            _setLockscreen();
-          }
-        });
-      });
-    } catch (e) {}
-
-    setState(() {
-      downloading = false;
-      progressString = "Completed";
-    });
-    print("completed");
-  }
-
-  Future<Null> _setLockscreen() async {
-    String setWallpaper;
-    try {
-      var dir = await getTemporaryDirectory();
-
-      final int result = await platform
-          .invokeMethod('setWallpaper', [dir.path + '/myimag.jpg', 2]);
-      setWallpaper = 'Wallpaper Changed';
-    } on PlatformException catch (e) {
-      setWallpaper = "Something went wrong";
-      //setWallpaper = "Failed to Set Wallpaer: '${e.message}'.";
-    }
-
-    setState(() {
-      _setWallpaper = setWallpaper;
-    });
-
-    Future.delayed(Duration(seconds: 3), () {
-      setState(() {
-        _setWallpaper = " ";
+        _promptOpacity = 0.0;
       });
     });
   }
@@ -133,26 +90,28 @@ class _MyAppState extends State<FullScreenImagePage> {
       openFileFromNotification:
           true, // click on notification to open downloaded file (for Android)
     );
+    print(downloadPath + widget.name);
     _download();
     print("completed");
   }
 
   Future<Null> _download() async {
     setState(() {
+      _promptOpacity = 1.0;
       _setWallpaper =
-          "This feature will be coming soon\nCurrently, Enjoy this app by setting up the wallpaper for your phone";
+          "This feature will be coming soon";
     });
 
     Future.delayed(Duration(seconds: 3), () {
       setState(() {
         _setWallpaper = " ";
+        _promptOpacity = 0.0;
       });
     });
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     Future<Null> setWallpaper() async {
       WidgetsFlutterBinding.ensureInitialized();
@@ -172,17 +131,24 @@ class _MyAppState extends State<FullScreenImagePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: new AppBar(
-        title: Text("WallUX"),
+        title: Text("WallUX",
+            style: GoogleFonts.poppins(
+              //  color: Colors.black87,
+              fontWeight: FontWeight.bold,
+            )),
         centerTitle: true,
         leading: IconButton(
             icon: Icon(
-              Icons.close,
+              Icons.arrow_back_ios,
               color: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop()),
+        //backgroundColor: Colors.white,
+        //foregroundColor: Colors.black54,
         backgroundColor: const Color(0xFF010101).withOpacity(1.0),
       ),
-      backgroundColor: const Color(0xFF010101).withOpacity(1.0),
+      backgroundColor: Colors.white,
+      //backgroundColor: const Color(0xFF010101).withOpacity(1.0),
       body: SizedBox.expand(
         child: Container(
           decoration: BoxDecoration(gradient: bg),
@@ -192,7 +158,7 @@ class _MyAppState extends State<FullScreenImagePage> {
                 children: [
                   Text("\nSet Wallpaper",
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Colors.black54,
                         fontSize: 19.0,
                       )),
                   Row(
@@ -200,32 +166,44 @@ class _MyAppState extends State<FullScreenImagePage> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       TextButton(
-                        //icon: new Icon(Icons.wallpaper),
-                        child: Text("Home Screen"),
-                        onPressed: () {
-                          print("Reloading...");
-                          setWallpaper();
-                        },
-                      ),
-                      TextButton(
-                        //icon: new Icon(Icons.wallpaper),
-                        child: Text("Lock Screen"),
-                        onPressed: () {
-                          print("Reloading...");
-                          setLockscreen();
-                        },
-                      ),
-                      TextButton(
-                        //icon: new Icon(Icons.wallpaper),
                         child: Text(
-                          "Download",
+                          "Home Screen",
                           style: GoogleFonts.poppins(
-                            color: Colors.white54,
-                            fontSize: 12.0,
-                          ),
+                              fontSize: 12.0, fontWeight: FontWeight.bold),
                         ),
                         onPressed: () {
                           print("Reloading...");
+                          setWallpaper(1);
+                        },
+                      ),
+                      TextButton(
+                        child: Text(
+                          "Lock Screen",
+                          style: GoogleFonts.poppins(
+                              fontSize: 12.0, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          print("Reloading...");
+                          setWallpaper(2);
+                        },
+                      ),
+                      TextButton(
+                        child: Text(
+                          "Both",
+                          style: GoogleFonts.poppins(
+                              fontSize: 12.0, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          print("Reloading...");
+                          setWallpaper(3);
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.download,
+                          color: Colors.black54,
+                        ),
+                        onPressed: () {
                           _download();
                         },
                       ),
@@ -236,17 +214,61 @@ class _MyAppState extends State<FullScreenImagePage> {
               SafeArea(
                 child: Align(
                   alignment: Alignment.center,
-                  child:
-                      Hero(tag: widget.img, child: Image.network(widget.img)),
+                  child: Hero(
+                      tag: widget.img,
+                      child: Image.network(compressed + widget.img)),
                 ),
               ),
               Align(
                 alignment: Alignment(0.0, 0.7),
-                child: Text(_setWallpaper,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 13.0,
-                    )),
+                child: Row(
+                  children: [
+                    Opacity(
+                      opacity: _promptOpacity,
+                      child: Material(
+                        elevation: 1,
+                        child: Container(
+                          color: Colors.pink,
+                          width: 5,
+                          height: 50,
+                          padding: EdgeInsets.all(5),
+                        ),
+                      ),
+                    ),
+                    Opacity(
+                      opacity: _promptOpacity,
+                      child: Material(
+                        elevation: 1,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(10),
+                                bottomRight: Radius.circular(10),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 2,
+                                  blurRadius: 7,
+                                  offset: Offset(1, 1),
+                                )
+                              ]),
+                          alignment: Alignment.center,
+                          //width: whiteDialog,
+                          padding: EdgeInsets.all(8),
+                          child: Text(_setWallpaper,
+                              style: GoogleFonts.poppins(
+                                color: Colors.black87,
+                                fontSize: 13.0,
+                              )),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Align(
                 alignment: Alignment.topCenter,

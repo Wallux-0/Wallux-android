@@ -1,7 +1,12 @@
+import 'dart:convert';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wallux/routes/wallpaper.dart';
+
+import 'package:http/http.dart' as http;
 
 class Home extends StatefulWidget {
   final Map<dynamic, dynamic> res;
@@ -14,14 +19,17 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int present = 0;
   int perPage = 10;
+  Map<dynamic, dynamic> res = {};
+
   var items = <dynamic>[];
 
   @override
   void initState() {
     super.initState();
+    res = this.widget.res;
+    print(res["wallpaper"]);
     setState(() {
-      items.addAll(
-          this.widget.res["wallpaper"].getRange(present, present + perPage));
+      items.addAll(res["wallpaper"].getRange(present, present + perPage));
       present = present + perPage;
     });
   }
@@ -30,250 +38,106 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     print(widget.res);
     print("We are in Home");
-    String imageLink =
+    String compressed =
         "https://raw.githubusercontent.com/Wallux-0/Wallpapers/main/compressed/";
-    String uncompressed =
-        "https://raw.githubusercontent.com/Wallux-0/Wallpapers/main/";
     var screenSize = MediaQuery.of(context).size;
     var width = screenSize.width;
     var height = screenSize.height;
-    var scaffoldKey = GlobalKey<ScaffoldState>();
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
-      ),
-    );
-    String gitHubLink =
-        "https://raw.githubusercontent.com/Wallux-0/Wallux/main/static/";
+    //var scaffoldKey = GlobalKey<ScaffoldState>();
+    
+
     return SafeArea(
       child: Scaffold(
-        key: scaffoldKey,
-        body: Column(
-          children: [
-            Container(
-              height: 60,
-              child: Padding(
-                padding: EdgeInsets.all(0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
+        //key: scaffoldKey,
+        body: Builder(
+          builder: (context) => Column(
+            children: [
+              Container(
+                height: 60,
+                child: Padding(
+                  padding: EdgeInsets.all(0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                Scaffold.of(context).openDrawer();
+                                //scaffoldKey.currentState!.openDrawer();
+                              },
+                              icon: Icon(
+                                Icons.menu,
+                                size: 28,
+                              )),
+                          Text(
+                            "WallUX",
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                          onPressed: () {
+                            showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                builder: (context) {
+                                  return (AlertDialog(
+                                    title: Text(
+                                      "Tags",
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                    content: Text(
+                                      "Tag feature is not currently available",
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black54,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    elevation: 6,
+                                  ));
+                                });
+                          },
+                          icon: Icon(
+                            Icons.tag,
+                            size: 28,
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: width,
+                height: height - (24 + 60),
+                child: LayoutBuilder(builder:
+                    (BuildContext context, BoxConstraints viewportConstraints) {
+                  return SingleChildScrollView(
+                    child: Column(
                       children: [
-                        IconButton(
-                            onPressed: () {
-                              scaffoldKey.currentState!.openDrawer();
-                            },
-                            icon: Icon(
-                              Icons.menu,
-                              size: 28,
-                            )),
+                        Image(
+                          width: width,
+                          fit: BoxFit.fitWidth,
+                          image: AssetImage("assets/appbanner.png"),
+                        ),
                         Text(
-                          "WallUX",
+                          "\nWallpapers\n",
                           style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
                             fontSize: 22,
                           ),
                         ),
+                        wallpaperListView(width, compressed),
                       ],
                     ),
-                    IconButton(
-                        onPressed: () {
-                          showDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              builder: (context) {
-                                return (AlertDialog(
-                                  title: Text(
-                                    "Tags",
-                                    style: GoogleFonts.poppins(),
-                                  ),
-                                  content: Text(
-                                    "Tag feature is not currently available",
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.black54,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  elevation: 6,
-                                ));
-                              });
-                        },
-                        icon: Icon(
-                          Icons.tag,
-                          size: 28,
-                        )),
-                  ],
-                ),
+                  );
+                }),
               ),
-            ),
-            SizedBox(
-              width: width,
-              height: height - (24 + 60),
-              child: LayoutBuilder(builder:
-                  (BuildContext context, BoxConstraints viewportConstraints) {
-                return SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Image(
-                        width: width,
-                        fit: BoxFit.fitWidth,
-                        image: AssetImage("assets/appbanner.png"),
-                      ),
-                      Text(
-                        "\nWallpapers\n",
-                        style: GoogleFonts.poppins(
-                          fontSize: 22,
-                        ),
-                      ),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount:
-                            (present <= this.widget.res["wallpaper"].length)
-                                ? items.length + 1
-                                : items.length,
-                        itemBuilder: (context, index) {
-                          return (index == items.length)
-                              ? Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        SizedBox(width: 20),
-                                        TextButton(
-                                          style: ButtonStyle(
-                                            padding: MaterialStateProperty.all<
-                                                    EdgeInsets>(
-                                                EdgeInsets.only(
-                                                    left: 20, right: 20)),
-                                            shape: MaterialStateProperty.all<
-                                                RoundedRectangleBorder>(
-                                              RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          20)),
-                                            ),
-                                            elevation:
-                                                MaterialStateProperty.all(3),
-                                            foregroundColor:
-                                                MaterialStateProperty.all(
-                                                    Colors.white),
-                                            fixedSize:
-                                                MaterialStateProperty.all<Size>(
-                                                    Size(130, 30)),
-                                            backgroundColor:
-                                                MaterialStateProperty.all(
-                                                    Colors.black87),
-                                          ),
-                                          child: Text(
-                                            "Load More",
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              if ((present + perPage) >
-                                                  this
-                                                      .widget
-                                                      .res["wallpaper"]
-                                                      .length) {
-                                                items.addAll(this
-                                                    .widget
-                                                    .res["wallpaper"]
-                                                    .getRange(
-                                                        present,
-                                                        this
-                                                            .widget
-                                                            .res["wallpaper"]
-                                                            .length));
-                                              } else {
-                                                items.addAll(this
-                                                    .widget
-                                                    .res["wallpaper"]
-                                                    .getRange(present,
-                                                        present + perPage));
-                                              }
-                                              present = present + perPage;
-                                            });
-                                          },
-                                        ),
-                                        SizedBox(width: 20),
-                                      ],
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.all(10),
-                                    ),
-                                  ],
-                                )
-                              : InkWell(
-                                  onTap: () => {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                FullScreenImagePage(
-                                                    imageLink +
-                                                        this.widget.res[
-                                                                'wallpaper']
-                                                            [index]['path'],
-                                                    this.widget.res['wallpaper']
-                                                        [index]['path'])))
-                                  },
-                                  child: Container(
-                                    width: width - 40,
-                                    padding: EdgeInsets.all(5),
-                                    margin: EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(10),
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.1),
-                                            spreadRadius: 2,
-                                            blurRadius: 7,
-                                            offset: Offset(1, 1),
-                                          )
-                                        ]),
-                                    child: Column(
-                                      children: [
-                                        FadeInImage.assetNetwork(
-                                          placeholder: 'assets/loading.gif',
-                                          width: width - 30,
-                                          fit: BoxFit.cover,
-                                          image: imageLink +
-                                              this.widget.res['wallpaper']
-                                                  [index]['path'],
-                                        ),
-                                        Text(
-                                          this.widget.res['wallpaper'][index]
-                                              ['name'],
-                                          style: GoogleFonts.openSans(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          this.widget.res['wallpaper'][index]
-                                              ['description'],
-                                          style: GoogleFonts.openSans(
-                                              color: Colors.black38),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ),
-          ],
+            ],
+          ),
         ),
         drawer: Drawer(
           child: SafeArea(
@@ -330,7 +194,7 @@ class _HomeState extends State<Home> {
                                   Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(
-                                      "\nWallUX app will give access to android user to use the various linux distribution background images as wallpaper for lock screen and home screen",
+                                      "\nWallUX app will give access to android user to set the wallpaper for lock screen and home screen from various wallpapers available mostly in desktop",
                                       style: GoogleFonts.openSans(
                                         fontWeight: FontWeight.w400,
                                         color: Colors.black54,
@@ -348,7 +212,7 @@ class _HomeState extends State<Home> {
                 ),
                 ListTile(
                   title: Text(
-                    "App Creators",
+                    "About Creators",
                     style: GoogleFonts.openSans(
                       fontWeight: FontWeight.w400,
                       color: Colors.black54,
@@ -388,7 +252,7 @@ class _HomeState extends State<Home> {
                                             ),
                                             children: const <TextSpan>[
                                           TextSpan(
-                                              text: " Manoj Paramsetti",
+                                              text: "Manoj Paramsetti",
                                               style: TextStyle(
                                                   fontWeight: FontWeight.bold)),
                                           TextSpan(
@@ -472,11 +336,131 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
+  Column wallpaperListView(double width, String compressed) {
+    return Column(
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          dragStartBehavior: DragStartBehavior.down,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: (present <= res["wallpaper"].length)
+              ? items.length + 1
+              : items.length,
+          itemBuilder: (context, index) {
+            return (index == items.length)
+                ? Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(width: 20),
+                          TextButton(
+                            style: ButtonStyle(
+                              padding: MaterialStateProperty.all<EdgeInsets>(
+                                  EdgeInsets.only(left: 20, right: 20)),
+                              shape: MaterialStateProperty.all<
+                                  RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20)),
+                              ),
+                              elevation: MaterialStateProperty.all(3),
+                              foregroundColor:
+                                  MaterialStateProperty.all(Colors.white),
+                              fixedSize: MaterialStateProperty.all<Size>(
+                                  Size(130, 30)),
+                              backgroundColor:
+                                  MaterialStateProperty.all(Colors.black87),
+                            ),
+                            child: Text(
+                              "Load More",
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                if ((present + perPage) >
+                                    this.widget.res["wallpaper"].length) {
+                                  items.addAll(this
+                                      .widget
+                                      .res["wallpaper"]
+                                      .getRange(present,
+                                          this.widget.res["wallpaper"].length));
+                                } else {
+                                  items.addAll(this
+                                      .widget
+                                      .res["wallpaper"]
+                                      .getRange(present, present + perPage));
+                                }
+                                present = present + perPage;
+                              });
+                            },
+                          ),
+                          SizedBox(width: 20),
+                        ],
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(10),
+                      ),
+                    ],
+                  )
+                : InkWell(
+                    onTap: () => {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => FullScreenImagePage(
+                                  res['wallpaper'][index]['path'],
+                                  res['wallpaper'][index]['path'])))
+                    },
+                    child: Container(
+                      width: width - 40,
+                      padding: EdgeInsets.all(5),
+                      margin: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 2,
+                              blurRadius: 7,
+                              offset: Offset(1, 1),
+                            )
+                          ]),
+                      child: Column(
+                        children: [
+                          FadeInImage.assetNetwork(
+                            placeholder: 'assets/loading.gif',
+                            width: width - 30,
+                            fit: BoxFit.cover,
+                            image: compressed + res['wallpaper'][index]['path'],
+                          ),
+                          Text(
+                            res['wallpaper'][index]['name'],
+                            style: GoogleFonts.openSans(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            res['wallpaper'][index]['description'],
+                            style: GoogleFonts.openSans(color: Colors.black38),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+          },
+        ),
+      ],
+    );
+  }
 }
 
 //Text(
 //    this.res['wallpaper'][index]['name']
-//    +" "+ imageLink+
+//    +" "+ compressed+
 //    (this.res['wallpaper'][index]['path']
 //  ),
 //)
